@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Exam Scam Reporter — Home</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="common.css">
+</head>
+<body>
+  <header>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><rect width='36' height='36' rx='8' fill='%230b63ff'/><text x='18' y='24' font-size='14' text-anchor='middle' fill='white' font-family='Arial'>ES</text></svg>" alt="logo" style="width:36px;height:36px;border-radius:6px"/>
+      <div>
+        <div style="font-weight:700">Exam Scam Reporter</div>
+        <div style="font-size:12px;color:#c7ddff">Helping students report and avoid scams</div>
+      </div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="report.html">Report Scam</a>
+      <a href="forum.html">Community Forum</a>
+      <a href="resources.html">Resources</a>
+      <a href="center_verify.html">Verify Center</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <div class="grid">
+      <main>
+        <section class="card">
+          <h2>Real-time Scam Alerts</h2>
+          <p class="small">Verified reports are shown on the map and listed below. Reports are first queued for moderator review and may be published after verification.</p>
+          <div class="map-box" id="map">Map placeholder — integrate Leaflet for production</div>
+          <h3 style="margin-top:12px">Recent Verified Alerts</h3>
+          <div id="alertsList"></div>
+        </section>
+
+        <section class="card">
+          <h2>News & Official Announcements</h2>
+          <div id="newsArea" class="small">Loading latest news...</div>
+        </section>
+
+        <section class="card">
+          <h2>Upcoming Events & Webinars</h2>
+          <ul id="eventsList" class="small">
+            <li>No events scheduled. (Admin can add webinars.)</li>
+          </ul>
+        </section>
+      </main>
+
+      <aside>
+        <div class="card">
+          <h3>Quick Actions</h3>
+          <p class="small"><a href="report.html">Report a scam</a> — anonymous submissions accepted.</p>
+          <p class="small"><a href="forum.html">Join the forum</a> to discuss experiences and advice.</p>
+          <p class="small"><a href="resources.html">Find study resources</a> and trusted links.</p>
+        </div>
+
+        <div class="card">
+          <h3>Student Safety</h3>
+          <p class="small">If you are a victim of a scam, collect evidence (screenshots, messages), and contact legal aid listed in Resources.</p>
+        </div>
+
+        <div class="card">
+          <h3>Chatbot</h3>
+          <p class="small">Use quick AI assistant below</p>
+          <input id="botInput" placeholder="Ask about verification..." class="form-control">
+          <button id="askBtn">Ask</button>
+          <div id="botReply" class="small" style="margin-top:8px"></div>
+        </div>
+      </aside>
+    </div>
+    <div class="footer">Demo platform — for production, follow README for DB, auth, and security.</div>
+  </div>
+
+  <script>
+    const api = '/api';
+    async function loadAlerts(){
+      try{
+        const r = await fetch(api + '/reports/recent');
+        const data = await r.json();
+        const alerts = data.filter(x=>x.status==='verified');
+        const container = document.getElementById('alertsList');
+        if(alerts.length===0) container.innerHTML = '<div class="small">No verified alerts yet.</div>';
+        else container.innerHTML = alerts.map(a=>'<div style="padding:8px;border-bottom:1px solid #eef">'+
+          '<strong>'+ (a.exam||'') + ' — ' + (a.scamType||'') + '</strong><div class="small">'+ (a.summary||'') +'</div><div class="small muted">Location: '+ (a.location||'-') + ' | Date: '+ (a.date||'-') +'</div></div>').join('');
+      }catch(e){
+        document.getElementById('alertsList').innerText = 'Could not load alerts.';
+      }
+    }
+    async function loadNews(){
+      try{
+        const r = await fetch(api + '/news');
+        const n = await r.json();
+        const na = document.getElementById('newsArea');
+        if(n.length===0) na.innerHTML = '<div class="small">No news yet.</div>';
+        else na.innerHTML = n.map(x=>'<div style="margin-bottom:8px"><strong>'+x.title+'</strong><div class="small">'+x.source+' • '+x.date+'</div></div>').join('');
+      }catch(e){ document.getElementById('newsArea').innerText = 'Failed to load news.'; }
+    }
+    document.getElementById('askBtn').addEventListener('click', ()=>{
+      const q = document.getElementById('botInput').value.toLowerCase();
+      const out = document.getElementById('botReply');
+      if(q.includes('verify')||q.includes('coaching')) out.innerText = 'To verify a center: check registration, reviews, GST, and ask for credentials. Use center verification page.';
+      else if(q.includes('report')) out.innerText = 'Go to Report Scam page. Provide date, location, evidence links, and summary.';
+      else out.innerText = 'I am a demo assistant. For legal help, check Resources.';
+    });
+    loadAlerts();
+    loadNews();
+  </script>
+</body>
+</html>

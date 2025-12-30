@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Report a Scam — Exam Scam Reporter</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" href="common.css">
+</head>
+<body>
+  <header>
+    <div style="display:flex;align-items:center;gap:12px">
+      <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36'><rect width='36' height='36' rx='8' fill='%230b63ff'/><text x='18' y='24' font-size='14' text-anchor='middle' fill='white' font-family='Arial'>ES</text></svg>" alt="logo" style="width:36px;height:36px;border-radius:6px"/>
+      <div style="font-weight:700">Exam Scam Reporter</div>
+    </div>
+    <nav class="nav">
+      <a href="index.html">Home</a>
+      <a href="report.html">Report Scam</a>
+      <a href="forum.html">Community Forum</a>
+      <a href="resources.html">Resources</a>
+      <a href="center_verify.html">Verify Center</a>
+    </nav>
+  </header>
+
+  <div class="container">
+    <main class="card">
+      <h2>Report a Scam (Anonymous)</h2>
+      <p class="small">We do not require personal identification. Evidence uploads are stored for moderator review.</p>
+      <form id="reportForm">
+        <label class="form-control">Date<input type="date" id="date" required></label>
+        <label class="form-control">Location<input id="location" placeholder="City, State" required></label>
+        <label class="form-control">Exam<select id="exam"><option>JEE</option><option>NEET</option><option>SSC</option><option>Other</option></select></label>
+        <label class="form-control">Type of scam<select id="scamType"><option>Fraudulent agents</option><option>Fake coaching center</option><option>Incorrect exam paper</option><option>ID fraud</option><option>Other</option></select></label>
+        <label class="form-control">Involved parties (names/institutions)<input id="involved"></label>
+        <label class="form-control">Evidence links or notes (or upload files via backend)<textarea id="evidence" rows="3"></textarea></label>
+        <label class="form-control">Public Summary<textarea id="summary" rows="4" required></textarea></label>
+        <div style="display:flex;gap:8px"><button type="submit">Submit Report</button><button id="saveDraft" type="button" style="background:#6b7280">Save draft</button></div>
+      </form>
+      <p id="status" class="small"></p>
+    </main>
+
+    <aside class="card" style="margin-top:12px">
+      <h3>Verification system</h3>
+      <p class="small">Reports pass a basic AI check and are then queued for human moderator review. Moderators can verify and publish reports.</p>
+    </aside>
+  </div>
+
+  <script>
+    const api = '/api';
+    document.getElementById('reportForm').addEventListener('submit', async (e)=>{
+      e.preventDefault();
+      const payload = {
+        date: document.getElementById('date').value,
+        location: document.getElementById('location').value,
+        exam: document.getElementById('exam').value,
+        scamType: document.getElementById('scamType').value,
+        involved: document.getElementById('involved').value,
+        evidence: document.getElementById('evidence').value,
+        summary: document.getElementById('summary').value,
+        anonymous: true
+      };
+      document.getElementById('status').innerText = 'Submitting...';
+      try{
+        const r = await fetch(api + '/reports', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+        const j = await r.json();
+        if(j.success){ document.getElementById('status').innerText = 'Submitted — queued for review. Report ID: ' + j.report.id; document.getElementById('reportForm').reset(); }
+        else document.getElementById('status').innerText = 'Submission failed.';
+      }catch(e){ document.getElementById('status').innerText = 'Server error.'; }
+    });
+  </script>
+</body>
+</html>
