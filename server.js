@@ -1,0 +1,30 @@
+/* Demo backend for Exam Scam Reporter v2 (in-memory) */
+const express = require('express');
+const cors = require('cors');
+const bodyParser = require('body-parser');
+const { v4: uuidv4 } = require('uuid');
+const app = express();
+app.use(cors());
+app.use(bodyParser.json());
+const PORT = process.env.PORT || 4000;
+const reports = [];
+const news = [ { id: uuidv4(), title: 'NTA issues update about admit cards', source:'NTA', date: '2025-10-01' } ];
+const forumThreads = [];
+const centers = [];
+function basicAICheck(r){ if(!r.summary) return {ok:false, reason:'Missing summary'}; if((r.evidence && r.evidence.length>10) || (r.involved && r.involved.length>3)) return {ok:true}; return {ok:false, reason:'Insufficient evidence'}; }
+app.post('/api/reports', (req,res)=>{ const data = req.body; const id = uuidv4(); const newR = { id, createdAt: new Date().toISOString(), status:'pending', ...data }; newR.ai_check = basicAICheck(newR); reports.unshift(newR); res.json({success:true, report:newR}); });
+app.get('/api/reports/recent', (req,res)=> res.json(reports.slice(0,100)) );
+app.get('/api/reports/:id', (req,res)=>{ const r = reports.find(x=>x.id===req.params.id); if(!r) return res.status(404).json({error:'Not found'}); res.json(r); });
+app.post('/api/reports/:id/verify', (req,res)=>{ const r = reports.find(x=>x.id===req.params.id); if(!r) return res.status(404).json({error:'Not found'}); r.status='verified'; res.json({success:true, report:r}); });
+app.get('/api/news', (req,res)=> res.json(news) );
+app.post('/api/news', (req,res)=>{ const item = { id: uuidv4(), ...req.body }; news.unshift(item); res.json({success:true, item}); });
+app.get('/api/forum/threads', (req,res)=> res.json(forumThreads) );
+app.post('/api/forum/threads', (req,res)=>{ const t = { id: uuidv4(), createdAt: new Date().toISOString(), posts: req.body.posts || [], title: req.body.title, category: req.body.category || 'General' }; forumThreads.unshift(t); res.json({success:true, thread:t}); });
+app.get('/api/forum/threads/:id', (req,res)=>{ const t = forumThreads.find(x=>x.id===req.params.id); if(!t) return res.status(404).json({error:'Not found'}); res.json(t); });
+app.post('/api/forum/threads/:id/posts', (req,res)=>{ const t = forumThreads.find(x=>x.id===req.params.id); if(!t) return res.status(404).json({error:'Not found'}); t.posts.push({ text: req.body.text, createdAt: new Date().toISOString() }); res.json({success:true}); });
+app.get('/api/centers', (req,res)=>{ const q = (req.query.name||'').toLowerCase(); if(!q) return res.json(centers); res.json(centers.filter(c=>c.name.toLowerCase().includes(q))); });
+app.post('/api/centers/reviews', (req,res)=>{ const { name, rating, review } = req.body; let c = centers.find(x=>x.name.toLowerCase()===name.toLowerCase()); if(!c){ c = { name, reviews: [], certificates:'', avgRating: rating }; centers.push(c); } c.reviews.push({ rating, review, createdAt: new Date().toISOString() }); c.avgRating = (c.reviews.reduce((s,r)=>s+r.rating,0)/c.reviews.length).toFixed(1); res.json({success:true}); });
+const events = [];
+app.get('/api/events',(req,res)=>res.json(events));
+app.post('/api/events',(req,res)=>{ const e = { id: uuidv4(), ...req.body }; events.unshift(e); res.json({success:true,e}); });
+app.listen(PORT, ()=> console.log('Server running on port', PORT));
